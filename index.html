@@ -64,7 +64,7 @@
 
   async function setFloor(n) {
     if (currentOverlay) { map.removeLayer(currentOverlay); currentOverlay = null; }
-    const file = `idea_lab_floor_plan.svg`;
+    const file = `idealab_floor_plan.svg`;
     try { currentOverlay = await addSvgOverlay(file); console.log('Loaded', file); }
     catch (e) { console.error('Failed to load svg', e); alert('Failed to load ' + file + ': ' + e); }
   }
