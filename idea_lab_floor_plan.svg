@@ -1,0 +1,40 @@
+<svg width="900" height="1200" viewBox="0 0 900 1200" xmlns="http://www.w3.org/2000/svg">
+
+  <!-- Outer Walls -->
+  <rect x="50" y="50" width="800" height="1100" fill="none" stroke="black" stroke-width="4"/>
+
+  <!-- Top Door -->
+  <rect x="70" y="250" width="40" height="120" fill="none" stroke="black" stroke-width="3"/>
+
+  <!-- Bottom Door -->
+  <rect x="380" y="1120" width="140" height="30" fill="none" stroke="black" stroke-width="3"/>
+
+  <!-- Mechanical Lab (Top) -->
+  <rect x="300" y="60" width="300" height="80" fill="none" stroke="black" stroke-width="3"/>
+  <text x="330" y="120" font-size="32" font-family="Arial">MECHANICAL LAB</text>
+
+  <!-- Electrical Lab (Right Middle) -->
+  <rect x="770" y="350" width="70" height="120" fill="none" stroke="black" stroke-width="3"/>
+  <text x="620" y="420" font-size="32" font-family="Arial">ELECTRICAL LAB</text>
+
+  <!-- Office -->
+  <rect x="770" y="520" width="70" height="120" fill="none" stroke="black" stroke-width="3"/>
+  <text x="690" y="590" font-size="32" font-family="Arial">OFFICE</text>
+
+  <!-- Meeting Room -->
+  <rect x="770" y="700" width="70" height="120" fill="none" stroke="black" stroke-width="3"/>
+  <text x="630" y="770" font-size="32" font-family="Arial">MEETING ROOM</text>
+
+  <!-- 3D Printing Lab -->
+  <rect x="770" y="880" width="70" height="140" fill="none" stroke="black" stroke-width="3"/>
+  <text x="580" y="950" font-size="32" font-family="Arial">3D PRINTING LAB</text>
+
+  <!-- Tables -->
+  <rect x="220" y="350" width="450" height="50" fill="none" stroke="black" stroke-width="2"/>
+  <rect x="220" y="450" width="450" height="50" fill="none" stroke="black" stroke-width="2"/>
+  <rect x="220" y="550" width="450" height="50" fill="none" stroke="black" stroke-width="2"/>
+
+  <text x="350" y="330" font-size="30" font-family="Arial">TABLES</text>
+  <text x="260" y="700" font-size="42" font-family="Arial">STUDENTS SITTING AREA</text>
+
+</svg>

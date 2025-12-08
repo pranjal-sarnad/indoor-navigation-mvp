@@ -1,0 +1,103 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>SVG Indoor Map (Leaflet) - Idea Lab Floor Plan</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+ <style>
+  html, body, #map {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+  .floor-switch {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 1000;
+    background: #fff;
+    padding: 6px;
+    border-radius: 6px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  }
+  .btn {
+    margin: 2px;
+    padding: 6px 8px;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+  <div id="map"></div>
+  <div class="floor-switch" id="floors">
+    <button class="btn" onclick="setFloor(0)">Floor 0</button>
+  </div>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+  // Detected SVG dimensions
+  const svgWidth = 900;   // detected svg width
+  const svgHeight = 1200; // detected svg height
+
+  // Create the map using pixel coordinates (CRS.Simple)
+  const map = L.map('map', {
+    crs: L.CRS.Simple,
+    minZoom: -5,
+    maxZoom: 4,
+  });
+
+  // Bounds use [y, x] (lat, lng) in this CRS
+  const bounds = [[0,0], [svgHeight, svgWidth]];
+  map.fitBounds(bounds);
+
+  async function addSvgOverlay(svgFile) {
+    const r = await fetch(svgFile);
+    if (!r.ok) throw new Error('Failed to fetch ' + svgFile);
+    const svgText = await r.text();
+    const svgDataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgText);
+    const overlay = L.imageOverlay(svgDataUrl, bounds, { interactive: true }).addTo(map);
+    return overlay;
+  }
+
+  let currentOverlay = null;
+
+  async function setFloor(n) {
+    if (currentOverlay) { map.removeLayer(currentOverlay); currentOverlay = null; }
+    const file = `idea_lab_floor_plan.svg`;
+    try { currentOverlay = await addSvgOverlay(file); console.log('Loaded', file); }
+    catch (e) { console.error('Failed to load svg', e); alert('Failed to load ' + file + ': ' + e); }
+  }
+
+  // load initial floor (floor0.svg)
+  setFloor(0);
+
+  // Add a draggable marker simulating user position
+  const marker = L.marker([svgHeight/2, svgWidth/2], { draggable: true }).addTo(map);
+  marker.bindPopup('You are here').openPopup();
+
+  // Simple route drawing: click to push points
+  let routePts = [];
+  const routeLayer = L.layerGroup().addTo(map);
+
+  map.on('click', function(e){
+    routePts.push([e.latlng.lat, e.latlng.lng]);
+    L.circleMarker([e.latlng.lat, e.latlng.lng], {radius:4}).addTo(routeLayer);
+    if (routePts.length >= 2) {
+      routeLayer.clearLayers();
+      routePts.forEach(pt => L.circleMarker(pt, {radius:4}).addTo(routeLayer));
+      L.polyline(routePts, {weight:4}).addTo(routeLayer);
+    }
+  });
+
+  // API to update position from external engine (xPixel, yPixel)
+  function updatePosition(xPixel, yPixel) {
+    const lat = yPixel;
+    const lng = xPixel;
+    marker.setLatLng([lat, lng]);
+  }
+
+  window.updatePosition = updatePosition;
+  </script>
+</body>
+</html>
