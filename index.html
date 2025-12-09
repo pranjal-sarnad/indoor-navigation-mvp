@@ -2,41 +2,119 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>SVG Indoor Map (Leaflet) - Idea Lab Floor Plan</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>SVG Indoor Map (Leaflet) - Idea Lab Floor Plan</title>
+
+  <link rel="manifest" href="manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="Logo.png">
+
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
- <style>
-  html, body, #map {
-    height: 100%;
-    margin: 0;
-    padding: 0;
-  }
-  .floor-switch {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    z-index: 1000;
-    background: #fff;
-    padding: 6px;
-    border-radius: 6px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.3);
-  }
-  .btn {
-    margin: 2px;
-    padding: 6px 8px;
-    cursor: pointer;
-  }
-</style>
+
+  <style>
+    /* page / map */
+    html, body { height: 100%; margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; }
+    #map { position: absolute; top: 0; left: 0; right: 0; bottom: 0; }
+
+    /* Right — floor switch + route controls */
+    .right-panel {
+      position: fixed;
+      right: 12px;
+      top: 12px;
+      width: 220px;
+      background: #ffffff;
+      color: #222;
+      padding: 10px;
+      border-radius: 8px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+      border: 1px solid rgba(0,0,0,0.08);
+      z-index: 10000;
+      box-sizing: border-box;
+    }
+
+    /* small button styles used inside panels */
+    .btn {
+      display:inline-block;
+      margin: 4px 2px;
+      padding: 6px 8px;
+      cursor: pointer;
+      border-radius: 4px;
+      border: 1px solid #cfcfcf;
+      background: #f6f6f6;
+      font-size: 13px;
+    }
+
+    label { display:block; font-weight:700; margin-top:6px; margin-bottom:6px; font-size:13px; }
+    select { width:100%; padding:6px; box-sizing:border-box; margin-bottom:8px; }
+    .panel-button { width:100%; padding:8px; margin-top:6px; cursor:pointer; border-radius:4px; border:1px solid #bbb; background:#f0f0f0; }
+
+    /* responsive adjustments */
+    @media (max-width: 760px) {
+      .left-panel, .right-panel { width: 160px; top: 8px; padding: 8px; }
+      .left-panel { left: 8px; }
+      .right-panel { right: 8px; }
+    }
+  </style>
 </head>
 <body>
+  <!-- Map container -->
   <div id="map"></div>
-  <div class="floor-switch" id="floors">
-    <button class="btn" onclick="setFloor(0)">Floor 0</button>
+
+  <!-- LEFT: Location box -->
+  <div class="left-panel" id="locationBox">
+    <label for="currentLocation"><strong>Your Location</strong></label>
+    <select id="currentLocation">
+      <option value="">-- Select current --</option>
+      <option value="entry">Entry</option>
+      <option value="workbench">Work Bench</option>
+      <option value="mechlab">Mechanical Lab</option>
+    </select>
+
+    <label for="destination"><strong>Destination</strong></label>
+    <select id="destination">
+      <option value="">-- Select destination --</option>
+      <option value="3dlab">3D Printing Lab</option>
+      <option value="meeting">Meeting Room</option>
+      <option value="pcb">PCB testing LAB</option>
+    </select>
+
+    <button id="btnGo" class="panel-button" onclick="goFromLocation()">Go</button>
+  </div>
+
+  <!-- RIGHT: Floor switch + route controls -->
+  <div class="right-panel" id="floors">
+    <div style="margin-bottom:8px;">
+      <label><strong>Floor</strong></label>
+      <button class="btn" onclick="setFloor(0)">Floor 0</button>
+      <!-- add more floor buttons if needed -->
+    </div>
+
+    <hr style="border:none;border-top:1px solid #eee;margin:8px 0;">
+
+    <label for="startSelect"><strong>Start location:</strong></label>
+    <select id="startSelect">
+      <option value="">-- Start --</option>
+      <option value="entry">Entry</option>
+      <option value="workbench">Work Bench</option>
+      <option value="mechlab">Mechanical Lab</option>
+    </select>
+
+    <label for="endSelect"><strong>Final location:</strong></label>
+    <select id="endSelect">
+      <option value="">-- End --</option>
+      <option value="3dlab">3D Printing Lab</option>
+      <option value="meeting">Meeting Room</option>
+      <option value="pcb">PCB testing LAB</option>
+    </select>
+
+    <button onclick="findRoute()" class="panel-button">Find Route</button>
+    <button onclick="clearRoute()" class="panel-button" style="background:#fff;margin-top:6px;">Clear</button>
   </div>
 
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script>
-  // Detected SVG dimensions
+  // Detected SVG dimensions (same as yours)
   const svgWidth = 900;   // detected svg width
   const svgHeight = 1200; // detected svg height
 
@@ -45,10 +123,11 @@
     crs: L.CRS.Simple,
     minZoom: -5,
     maxZoom: 4,
+    zoomControl: true,
   });
 
   // Bounds use [y, x] (lat, lng) in this CRS
-  const bounds = [[0,0], [svgHeight, svgWidth]];
+  const bounds = [[0, 0], [svgHeight, svgWidth]];
   map.fitBounds(bounds);
 
   async function addSvgOverlay(svgFile) {
@@ -76,20 +155,6 @@
   const marker = L.marker([svgHeight/2, svgWidth/2], { draggable: true }).addTo(map);
   marker.bindPopup('You are here').openPopup();
 
-  // Simple route drawing: click to push points
-  let routePts = [];
-  const routeLayer = L.layerGroup().addTo(map);
-
-  map.on('click', function(e){
-    routePts.push([e.latlng.lat, e.latlng.lng]);
-    L.circleMarker([e.latlng.lat, e.latlng.lng], {radius:4}).addTo(routeLayer);
-    if (routePts.length >= 2) {
-      routeLayer.clearLayers();
-      routePts.forEach(pt => L.circleMarker(pt, {radius:4}).addTo(routeLayer));
-      L.polyline(routePts, {weight:4}).addTo(routeLayer);
-    }
-  });
-
   // API to update position from external engine (xPixel, yPixel)
   function updatePosition(xPixel, yPixel) {
     const lat = yPixel;
@@ -98,6 +163,34 @@
   }
 
   window.updatePosition = updatePosition;
+
+  /* ====== Simple route placeholder functions ====== */
+  function findRoute() {
+    const s = document.getElementById('startSelect').value;
+    const e = document.getElementById('endSelect').value;
+    if (!s || !e) { alert('Please select start and end.'); return; }
+    alert('Finding route from ' + s + ' to ' + e + ' (implement pathfinding).');
+    // TODO: integrate your pathfinding and draw polyline on the map
+  }
+
+  function clearRoute() {
+    // TODO: remove any drawn route on the map
+    alert('Clear route (implement clear logic).');
+  }
+
+  function goFromLocation() {
+    const cur = document.getElementById('currentLocation').value;
+    const dest = document.getElementById('destination').value;
+    if (!cur || !dest) { alert('Select current and destination.'); return; }
+    // Example: copy to right-side selects and call findRoute
+    document.getElementById('startSelect').value = cur || '';
+    document.getElementById('endSelect').value = dest || '';
+    findRoute();
+  }
+
+  // Debug logging of computed style (useful if panel is visually obstructed)
+  console.log('left panel computed:', window.getComputedStyle(document.getElementById('locationBox')));
+  console.log('right panel computed:', window.getComputedStyle(document.getElementById('floors')));
   </script>
 </body>
 </html>
