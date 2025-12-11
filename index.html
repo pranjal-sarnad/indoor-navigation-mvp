@@ -13,6 +13,16 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 
   <style>
+    .leaflet-container .small-pin {
+  width: 10px;
+  height: 10px;
+  border-radius: 6px;
+  background: #0077cc;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+  display:block;
+  transform: translate(-5px,-5px);
+   }
+
     /* page / map */
     html, body { height: 100%; margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; }
     #map { position: absolute; top: 0; left: 0; right: 0; bottom: 0; }
@@ -24,7 +34,7 @@
       top: 12px;
       width: 220px;
       background: #ffffff;
-      color: #222;
+      color: #d15858;
       padding: 10px;
       border-radius: 8px;
       box-shadow: 0 6px 18px rgba(0,0,0,0.12);
@@ -49,38 +59,36 @@
     select { width:100%; padding:6px; box-sizing:border-box; margin-bottom:8px; }
     .panel-button { width:100%; padding:8px; margin-top:6px; cursor:pointer; border-radius:4px; border:1px solid #bbb; background:#f0f0f0; }
 
+    /* small left panel (optional) */
+    .left-panel {
+      position: fixed;
+      left: 12px;
+      top: 12px;
+      width: 200px;
+      background: rgba(255,255,255,0.98);
+      padding: 8px;
+      border-radius: 8px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+      z-index: 10000;
+    }
+
     /* responsive adjustments */
     @media (max-width: 760px) {
       .left-panel, .right-panel { width: 160px; top: 8px; padding: 8px; }
       .left-panel { left: 8px; }
       .right-panel { right: 8px; }
     }
+
+    /* debug label style (if any permanent labels appear) */
+    .node-label { background: rgba(255,255,255,0.95); padding:2px 6px; border-radius:4px; box-shadow:0 1px 2px rgba(0,0,0,0.15); }
   </style>
 </head>
 <body>
   <!-- Map container -->
   <div id="map"></div>
-
-  <!-- LEFT: Location box -->
-  <div class="left-panel" id="locationBox">
-    <label for="currentLocation"><strong>Your Location</strong></label>
-    <select id="currentLocation">
-      <option value="">-- Select current --</option>
-      <option value="entry">Entry</option>
-      <option value="workbench">Work Bench</option>
-      <option value="mechlab">Mechanical Lab</option>
-    </select>
-
-    <label for="destination"><strong>Destination</strong></label>
-    <select id="destination">
-      <option value="">-- Select destination --</option>
-      <option value="3dlab">3D Printing Lab</option>
-      <option value="meeting">Meeting Room</option>
-      <option value="pcb">PCB testing LAB</option>
-    </select>
-
-    <button id="btnGo" class="panel-button" onclick="goFromLocation()">Go</button>
-  </div>
+  
+  <!-- LEFT: Location box (kept from original) -->
+  
 
   <!-- RIGHT: Floor switch + route controls -->
   <div class="right-panel" id="floors">
@@ -96,27 +104,63 @@
     <select id="startSelect">
       <option value="">-- Start --</option>
       <option value="entry">Entry</option>
-      <option value="workbench">Work Bench</option>
+      <option value="showcase">Showcase</option>
       <option value="mechlab">Mechanical Lab</option>
+      <option value="projector">Projector</option>
+      <option value="maintable">Main Table</option>
+      <option value="workspace_students">Workspace for Students</option>
+      <option value="workbench">Work Bench</option>
+      <option value="chemlab">CHEM LAB</option>
+      <option value="office">Open Office Space</option>
+      <option value="pcbmfg">PCB Manufacturing LAB</option>
+      <option value="pcbtest">PCB Testing LAB</option>
+      <option value="pi_room">Principal Investigators Room</option>
+      <option value="meeting">Meeting Room</option>
+      <option value="3dprint">3D Printing LAB</option>
     </select>
 
     <label for="endSelect"><strong>Final location:</strong></label>
     <select id="endSelect">
       <option value="">-- End --</option>
-      <option value="3dlab">3D Printing Lab</option>
+      <option value="entry">Entry</option>
+      <option value="showcase">Showcase</option>
+      <option value="mechlab">Mechanical Lab</option>
+      <option value="projector">Projector</option>
+      <option value="maintable">Main Table</option>
+      <option value="workspace_students">Workspace for Students</option>
+      <option value="workbench">Work Bench</option>
+      <option value="chemlab">CHEM LAB</option>
+      <option value="office">Open Office Space</option>
+      <option value="pcbmfg">PCB Manufacturing LAB</option>
+      <option value="pcbtest">PCB Testing LAB</option>
+      <option value="pi_room">Principal Investigators Room</option>
       <option value="meeting">Meeting Room</option>
-      <option value="pcb">PCB testing LAB</option>
+      <option value="3dprint">3D Printing LAB</option>
     </select>
 
-    <button onclick="findRoute()" class="panel-button">Find Route</button>
-    <button onclick="clearRoute()" class="panel-button" style="background:#fff;margin-top:6px;">Clear</button>
+    <button id="btnFind" class="panel-button">Find Route</button>
+    <button id="btnClear" class="panel-button" style="background:#fff;margin-top:6px;">Clear</button>
   </div>
 
+  <!-- Load Leaflet -->
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+  <!-- Load generated graph data (must be present in same folder) -->
+  <script src="nodes_edges.js"></script>
+
+  <!-- AUTO-ROUTE: Load room_to_node.json if available -->
   <script>
-  // Detected SVG dimensions (same as yours)
-  const svgWidth = 900;   // detected svg width
-  const svgHeight = 1200; // detected svg height
+    let ROOM_TO_NODE = null;
+    fetch('room_to_node.json')
+      .then(r => r.ok ? r.json() : null)
+      .then(m => { ROOM_TO_NODE = m || null; console.log('Loaded room_to_node.json', ROOM_TO_NODE); })
+      .catch(err => console.log('No room_to_node.json found; fallback mapping will be used'));
+  </script>
+
+  <script>
+  // ---- Use real SVG size (from your script run) ----
+  const svgWidth = 1253;   // (replace if your script printed different)
+  const svgHeight = 1381;
 
   // Create the map using pixel coordinates (CRS.Simple)
   const map = L.map('map', {
@@ -130,6 +174,7 @@
   const bounds = [[0, 0], [svgHeight, svgWidth]];
   map.fitBounds(bounds);
 
+  // overlay SVG image
   async function addSvgOverlay(svgFile) {
     const r = await fetch(svgFile);
     if (!r.ok) throw new Error('Failed to fetch ' + svgFile);
@@ -140,7 +185,6 @@
   }
 
   let currentOverlay = null;
-
   async function setFloor(n) {
     if (currentOverlay) { map.removeLayer(currentOverlay); currentOverlay = null; }
     const file = `idealab_floor_plan.svg`;
@@ -148,49 +192,238 @@
     catch (e) { console.error('Failed to load svg', e); alert('Failed to load ' + file + ': ' + e); }
   }
 
-  // load initial floor (floor0.svg)
+  // initial load
   setFloor(0);
 
-  // Add a draggable marker simulating user position
+  /* ====== NODES + EDGES (from nodes_edges.js) ======
+     nodes_edges.js must define `nodes` and `edges` arrays. */
+  if (typeof nodes === 'undefined' || typeof edges === 'undefined') {
+    console.error('nodes or edges not found - ensure nodes_edges.js is present and defines them');
+  }
+
+  // Build nodeMap & adjacency
+  const nodeMap = {};
+  if (typeof nodes !== 'undefined') nodes.forEach(n => nodeMap[n.id] = n);
+
+  // Lightweight node debug: show small markers and tooltip on hover (not permanent)
+  (function addNodeDebugOverlay(){
+    if (typeof nodes === 'undefined') return;
+    // guard: if massive number of nodes, skip by default (tweak threshold if desired)
+    const MAX_SHOW = 800;
+    if (nodes.length > MAX_SHOW) {
+      console.log('Skipping debug overlay (too many nodes):', nodes.length);
+      return;
+    }
+    const debugLayer = L.layerGroup().addTo(map);
+    nodes.forEach(n => {
+      const m = L.circleMarker([n.y, n.x], {
+        radius: 3,
+        color: '#ff3333',
+        fillColor: '#ff3333',
+        fillOpacity: 0.95,
+        weight: 0.4,
+        interactive: true
+      }).addTo(debugLayer);
+      m.bindTooltip(n.id, { permanent: false, direction: 'right', offset: [6,0], className: 'node-label' });
+      m.on('mouseover', () => m.openTooltip());
+      m.on('mouseout', () => m.closeTooltip());
+    });
+  })();
+
+  // Build adjacency graph (weights = Euclidean)
+  const adjacency = {};
+  if (typeof nodes !== 'undefined') nodes.forEach(n => adjacency[n.id] = []);
+  if (typeof edges !== 'undefined') edges.forEach(([a,b])=>{
+    const na = nodeMap[a], nb = nodeMap[b];
+    if (!na || !nb) return;
+    const w = Math.hypot(na.x - nb.x, na.y - nb.y);
+    adjacency[a].push({ to: b, w });
+    adjacency[b].push({ to: a, w });
+  });
+
+  // helper: nearest node
+  function nearestNodeToPoint(px, py){
+    let best = null, bd = Infinity;
+    if (typeof nodes === 'undefined') return { node: null, dist: bd };
+    for (const n of nodes){
+      const d = Math.hypot(n.x - px, n.y - py);
+      if (d < bd){ bd = d; best = n; }
+    }
+    return { node: best, dist: bd };
+  }
+
+  // Dijkstra (simple)
+  function dijkstra(startId, goalId){
+    const dist = {}, prev = {};
+    if (typeof nodes === 'undefined') return null;
+    const Q = new Set(nodes.map(n => n.id));
+    nodes.forEach(n => { dist[n.id] = Infinity; prev[n.id] = null; });
+    if (!(startId in dist) || !(goalId in dist)) return null;
+    dist[startId] = 0;
+    while (Q.size){
+      let u = null, best = Infinity;
+      Q.forEach(id => { if (dist[id] < best){ best = dist[id]; u = id; } });
+      if (u === null) break;
+      Q.delete(u);
+      if (u === goalId) break;
+      adjacency[u].forEach(edge => {
+        const alt = dist[u] + edge.w;
+        if (alt < dist[edge.to]){ dist[edge.to] = alt; prev[edge.to] = u; }
+      });
+    }
+    if (dist[goalId] === Infinity) return null;
+    const path = []; let cur = goalId;
+    while (cur){ path.push(cur); cur = prev[cur]; }
+    return path.reverse();
+  }
+
+  // route drawing state
+  let routeLayer = null;
+  let startPin = null;
+  let endPin = null;
+  function _clearRouteInternal(){
+    if (routeLayer){ map.removeLayer(routeLayer); routeLayer = null; }
+    if (startPin){ map.removeLayer(startPin); startPin = null; }
+    if (endPin){ map.removeLayer(endPin); endPin = null; }
+  }
+
+  function drawPath(nodePath){
+  // clear previous
+  _clearRouteInternal();
+
+  if (!nodePath || nodePath.length === 0) return;
+
+  // build latlngs (y,x)
+  const latlngs = nodePath.map(id => [ nodeMap[id].y, nodeMap[id].x ]);
+
+  // draw polyline
+  routeLayer = L.polyline(latlngs, { color:'#0077cc', weight:5, opacity:0.95, smoothFactor:1 }).addTo(map);
+
+  // move the draggable user marker to the start (so only one user pin)
+  try {
+    marker.setLatLng(latlngs[0]);
+    // update popup text and open it
+    marker.bindPopup('You are here — start: ' + nodePath[0]).openPopup();
+    // keep marker visible
+    marker.setOpacity(1.0);
+  } catch (e) { console.warn('Could not move marker:', e); }
+
+  // add lightweight start/end pins (smaller icons)
+  const smallIcon = L.divIcon({ className: 'small-pin', html: '', iconSize: [8,8] });
+
+  startPin = L.marker(latlngs[0], { icon: smallIcon, interactive: false }).addTo(map);
+  endPin = L.marker(latlngs[latlngs.length-1], { icon: smallIcon, interactive: false }).addTo(map);
+
+  // optional: show popup for start only (end popup on click)
+  startPin.bindPopup('Start: '+nodePath[0]).openPopup();
+  endPin.bindPopup('End: '+nodePath[nodePath.length-1]);
+
+  try { map.fitBounds(routeLayer.getBounds(), { padding:[20,20] }); } catch(e){ /* ignore */ }
+ }
+
+
+  // left panel "Go" (copies and triggers)
+  function goFromLocation(){
+    const cur = document.getElementById('currentLocation').value;
+    const dest = document.getElementById('destination').value;
+    if (!cur || !dest){ alert('Select current and destination in the left panel.'); return; }
+    document.getElementById('startSelect').value = cur;
+    document.getElementById('endSelect').value = dest;
+    tryAutoRouteFromSelects();
+  }
+
+  // findRoute triggered by button when no ROOM_TO_NODE mapping exists.
+  // This initiates click-to-assign mode: user clicks the map for start and end.
+  let assignMode = null; // { startLabel, endLabel, step, startPx, endPx }
+  function findRoute(){
+    const s = document.getElementById('startSelect').value;
+    const e = document.getElementById('endSelect').value;
+    if (!s || !e){ alert('Please select both Start and End in the right panel.'); return; }
+    // if mapping available, compute immediately
+    if (ROOM_TO_NODE && ROOM_TO_NODE[s] && ROOM_TO_NODE[e]){
+      const path = dijkstra(ROOM_TO_NODE[s], ROOM_TO_NODE[e]);
+      if (path) { drawPath(path); return; }
+    }
+    // otherwise go into assign mode (two clicks)
+    assignMode = { startLabel: s, endLabel: e, step: 0 };
+    alert('Click once on the map where "' + s + '" is located. Then click where "' + e + '" is located.');
+  }
+
+  // Map click handling
+  map.on('click', function(e){
+    const px = e.latlng.lng, py = e.latlng.lat;
+
+    if (assignMode){
+      if (assignMode.step === 0){
+        assignMode.startPx = { x: px, y: py };
+        assignMode.step = 1;
+        alert('Start recorded. Now click the map where "' + assignMode.endLabel + '" is located.');
+        return;
+      } else if (assignMode.step === 1){
+        assignMode.endPx = { x: px, y: py };
+        const sNearest = nearestNodeToPoint(assignMode.startPx.x, assignMode.startPx.y);
+        const eNearest = nearestNodeToPoint(assignMode.endPx.x, assignMode.endPx.y);
+        if (!sNearest.node || !eNearest.node){ alert('Could not find nearest graph nodes.'); assignMode = null; return; }
+        const path = dijkstra(sNearest.node.id, eNearest.node.id);
+        if (!path){ alert('No path found between selected points.'); assignMode = null; return; }
+        drawPath(path);
+        assignMode = null;
+        return;
+      }
+    }
+
+    // Normal click routing: route from draggable marker to clicked point
+    const markerPos = marker.getLatLng();
+    const startPx = latlngToPixel(markerPos);
+    const endPx = { x: px, y: py };
+    const sNearest = nearestNodeToPoint(startPx.x, startPx.y);
+    const eNearest = nearestNodeToPoint(endPx.x, endPx.y);
+    if (!sNearest.node || !eNearest.node){ alert('Could not find nearest graph nodes for routing.'); return; }
+    const path = dijkstra(sNearest.node.id, eNearest.node.id);
+    if (!path){ alert('No path found between marker and clicked point.'); return; }
+    drawPath(path);
+  });
+
+  // draggable position marker to simulate user position
   const marker = L.marker([svgHeight/2, svgWidth/2], { draggable: true }).addTo(map);
   marker.bindPopup('You are here').openPopup();
 
-  // API to update position from external engine (xPixel, yPixel)
-  function updatePosition(xPixel, yPixel) {
-    const lat = yPixel;
-    const lng = xPixel;
-    marker.setLatLng([lat, lng]);
+  // helper: convert latlng to pixel coords
+  function latlngToPixel(latlng){ return { x: latlng.lng, y: latlng.lat }; }
+
+  // Try automatic routing when selects change (uses ROOM_TO_NODE if present)
+  async function tryAutoRouteFromSelects(){
+    const sVal = document.getElementById('startSelect').value;
+    const eVal = document.getElementById('endSelect').value;
+    if (!sVal || !eVal) return;
+
+    // if mapping is available, use it
+    if (ROOM_TO_NODE && ROOM_TO_NODE[sVal] && ROOM_TO_NODE[eVal]){
+      const path = dijkstra(ROOM_TO_NODE[sVal], ROOM_TO_NODE[eVal]);
+      if (path) { drawPath(path); return; }
+    }
+
+    // otherwise, we ask user to click to assign (fallback)
+    // If the mapping is missing, prompt the user to click map for start & end
+    alert('Automatic mapping not found for one or both selections. Please click "Find Route" and then click the map for Start and End points (two clicks).');
   }
 
-  window.updatePosition = updatePosition;
+  // wire up UI buttons and select change handlers
+  document.getElementById('btnFind').addEventListener('click', findRoute);
+  document.getElementById('btnClear').addEventListener('click', _clearRouteInternal);
+  document.getElementById('startSelect').addEventListener('change', tryAutoRouteFromSelects);
+  document.getElementById('endSelect').addEventListener('change', tryAutoRouteFromSelects);
 
-  /* ====== Simple route placeholder functions ====== */
-  function findRoute() {
-    const s = document.getElementById('startSelect').value;
-    const e = document.getElementById('endSelect').value;
-    if (!s || !e) { alert('Please select start and end.'); return; }
-    alert('Finding route from ' + s + ' to ' + e + ' (implement pathfinding).');
-    // TODO: integrate your pathfinding and draw polyline on the map
-  }
+  // expose functions globally if other code expects them
+  window.findRoute = findRoute;
+  window.clearRoute = _clearRouteInternal;
+  window.goFromLocation = goFromLocation;
+  window.updatePosition = function(xPixel, yPixel){
+    marker.setLatLng([yPixel, xPixel]);
+  };
 
-  function clearRoute() {
-    // TODO: remove any drawn route on the map
-    alert('Clear route (implement clear logic).');
-  }
-
-  function goFromLocation() {
-    const cur = document.getElementById('currentLocation').value;
-    const dest = document.getElementById('destination').value;
-    if (!cur || !dest) { alert('Select current and destination.'); return; }
-    // Example: copy to right-side selects and call findRoute
-    document.getElementById('startSelect').value = cur || '';
-    document.getElementById('endSelect').value = dest || '';
-    findRoute();
-  }
-
-  // Debug logging of computed style (useful if panel is visually obstructed)
-  console.log('left panel computed:', window.getComputedStyle(document.getElementById('locationBox')));
-  console.log('right panel computed:', window.getComputedStyle(document.getElementById('floors')));
+  // debug: log summary
+  console.log('Routing initialized. Nodes:', typeof nodes !== 'undefined' ? nodes.length : 0, 'Edges:', typeof edges !== 'undefined' ? edges.length : 0);
   </script>
 </body>
 </html>
