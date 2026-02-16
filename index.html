@@ -13,16 +13,6 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 
   <style>
-    .leaflet-container .small-pin {
-  width: 10px;
-  height: 10px;
-  border-radius: 6px;
-  background: #0077cc;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.25);
-  display:block;
-  transform: translate(-5px,-5px);
-   }
-
     /* page / map */
     html, body { height: 100%; margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; }
     #map { position: absolute; top: 0; left: 0; right: 0; bottom: 0; }
@@ -55,41 +45,26 @@
       font-size: 13px;
     }
 
-    label { display:block; font-weight:700; margin-top:6px; margin-bottom:6px; font-size:13px; }
+    label { display:block; font-weight:700; margin-top:6px; margin-bottom:6px; font-size:13px; color:#c44a4a; }
     select { width:100%; padding:6px; box-sizing:border-box; margin-bottom:8px; }
     .panel-button { width:100%; padding:8px; margin-top:6px; cursor:pointer; border-radius:4px; border:1px solid #bbb; background:#f0f0f0; }
 
-    /* small left panel (optional) */
-    .left-panel {
-      position: fixed;
-      left: 12px;
-      top: 12px;
-      width: 200px;
-      background: rgba(255,255,255,0.98);
-      padding: 8px;
-      border-radius: 8px;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.06);
-      z-index: 10000;
-    }
+    /* remove left panel entirely (you asked to remove it) */
+    .left-panel { display: none; }
+
+    /* small label style for debug node labels (optional) */
+    .node-label { font-size: 12px; background: rgba(255,255,255,0.9); padding:2px 6px; border-radius:4px; border:1px solid #ddd; }
 
     /* responsive adjustments */
     @media (max-width: 760px) {
-      .left-panel, .right-panel { width: 160px; top: 8px; padding: 8px; }
-      .left-panel { left: 8px; }
-      .right-panel { right: 8px; }
+      .right-panel { width: 180px; right:8px; top:8px; }
     }
-
-    /* debug label style (if any permanent labels appear) */
-    .node-label { background: rgba(255,255,255,0.95); padding:2px 6px; border-radius:4px; box-shadow:0 1px 2px rgba(0,0,0,0.15); }
   </style>
 </head>
 <body>
   <!-- Map container -->
   <div id="map"></div>
   
-  <!-- LEFT: Location box (kept from original) -->
-  
-
   <!-- RIGHT: Floor switch + route controls -->
   <div class="right-panel" id="floors">
     <div style="margin-bottom:8px;">
@@ -103,66 +78,56 @@
     <label for="startSelect"><strong>Start location:</strong></label>
     <select id="startSelect">
       <option value="">-- Start --</option>
-      <option value="entry">Entry</option>
+      <option value="Entry">Entry</option>
       <option value="showcase">Showcase</option>
-      <option value="mechlab">Mechanical Lab</option>
+      <option value="Mechanical Lab">Mechanical Lab</option>
       <option value="projector">Projector</option>
-      <option value="maintable">Main Table</option>
-      <option value="workspace_students">Workspace for Students</option>
-      <option value="workbench">Work Bench</option>
-      <option value="chemlab">CHEM LAB</option>
-      <option value="office">Open Office Space</option>
-      <option value="pcbmfg">PCB Manufacturing LAB</option>
-      <option value="pcbtest">PCB Testing LAB</option>
-      <option value="pi_room">Principal Investigators Room</option>
-      <option value="meeting">Meeting Room</option>
-      <option value="3dprint">3D Printing LAB</option>
+      <option value="Main Table">Main Table</option>
+      <option value="Workspace for students">Workspace for students</option>
+      <option value="Work Bench">Work Bench</option>
+      <option value="CHEM LAB">CHEM LAB</option>
+      <option value="open office space">Open Office Space</option>
+      <option value="PCB Manufacturing LAB">PCB Manufacturing LAB</option>
+      <option value="PCB Testing LAB">PCB Testing LAB</option>
+      <option value="Principal Investigators room">Principal Investigators Room</option>
+      <option value="MEETING ROOM">Meeting Room</option>
+      <option value="3D Printing Lab">3D Printing LAB</option>
     </select>
 
     <label for="endSelect"><strong>Final location:</strong></label>
     <select id="endSelect">
       <option value="">-- End --</option>
-      <option value="entry">Entry</option>
+      <option value="Entry">Entry</option>
       <option value="showcase">Showcase</option>
-      <option value="mechlab">Mechanical Lab</option>
+      <option value="Mechanical Lab">Mechanical Lab</option>
       <option value="projector">Projector</option>
-      <option value="maintable">Main Table</option>
-      <option value="workspace_students">Workspace for Students</option>
-      <option value="workbench">Work Bench</option>
-      <option value="chemlab">CHEM LAB</option>
-      <option value="office">Open Office Space</option>
-      <option value="pcbmfg">PCB Manufacturing LAB</option>
-      <option value="pcbtest">PCB Testing LAB</option>
-      <option value="pi_room">Principal Investigators Room</option>
-      <option value="meeting">Meeting Room</option>
-      <option value="3dprint">3D Printing LAB</option>
+      <option value="Main Table">Main Table</option>
+      <option value="Workspace for students">Workspace for students</option>
+      <option value="Work Bench">Work Bench</option>
+      <option value="CHEM LAB">CHEM LAB</option>
+      <option value="open office space">Open Office Space</option>
+      <option value="PCB Manufacturing LAB">PCB Manufacturing LAB</option>
+      <option value="PCB Testing LAB">PCB Testing LAB</option>
+      <option value="Principal Investigators room">Principal Investigators Room</option>
+      <option value="MEETING ROOM">Meeting Room</option>
+      <option value="3D Printing Lab">3D Printing LAB</option>
     </select>
 
-    <button id="btnFind" class="panel-button">Find Route</button>
-    <button id="btnClear" class="panel-button" style="background:#fff;margin-top:6px;">Clear</button>
+    <button id="btnFind" onclick="findRoute()" class="panel-button">Find Route</button>
+    <button id="btnClear" onclick="clearRoute()" class="panel-button" style="background:#fff;margin-top:6px;">Clear</button>
   </div>
 
   <!-- Load Leaflet -->
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
-  <!-- Load generated graph data (must be present in same folder) -->
+  <!-- Load your generated graph data -->
   <script src="nodes_edges.js"></script>
 
-  <!-- AUTO-ROUTE: Load room_to_node.json if available -->
   <script>
-    let ROOM_TO_NODE = null;
-    fetch('room_to_node.json')
-      .then(r => r.ok ? r.json() : null)
-      .then(m => { ROOM_TO_NODE = m || null; console.log('Loaded room_to_node.json', ROOM_TO_NODE); })
-      .catch(err => console.log('No room_to_node.json found; fallback mapping will be used'));
-  </script>
+  /***** Basic map + SVG overlay setup *****/
+  const svgWidth = 1253;   // detected svg width (adjust if needed)
+  const svgHeight = 1381; // detected svg height (adjust if needed)
 
-  <script>
-  // ---- Use real SVG size (from your script run) ----
-  const svgWidth = 1253;   // (replace if your script printed different)
-  const svgHeight = 1381;
-
-  // Create the map using pixel coordinates (CRS.Simple)
   const map = L.map('map', {
     crs: L.CRS.Simple,
     minZoom: -5,
@@ -170,11 +135,9 @@
     zoomControl: true,
   });
 
-  // Bounds use [y, x] (lat, lng) in this CRS
   const bounds = [[0, 0], [svgHeight, svgWidth]];
   map.fitBounds(bounds);
 
-  // overlay SVG image
   async function addSvgOverlay(svgFile) {
     const r = await fetch(svgFile);
     if (!r.ok) throw new Error('Failed to fetch ' + svgFile);
@@ -191,57 +154,48 @@
     try { currentOverlay = await addSvgOverlay(file); console.log('Loaded', file); }
     catch (e) { console.error('Failed to load svg', e); alert('Failed to load ' + file + ': ' + e); }
   }
-
-  // initial load
+  // initial overlay
   setFloor(0);
 
-  /* ====== NODES + EDGES (from nodes_edges.js) ======
-     nodes_edges.js must define `nodes` and `edges` arrays. */
-  if (typeof nodes === 'undefined' || typeof edges === 'undefined') {
-    console.error('nodes or edges not found - ensure nodes_edges.js is present and defines them');
+  /***** Load optional room->node mapping *****/
+  let ROOM_TO_NODE = null;
+  fetch('room_to_node.json')
+    .then(r => r.ok ? r.json() : null)
+    .then(m => { ROOM_TO_NODE = m || null; console.log('Loaded room_to_node.json', ROOM_TO_NODE); /* try auto-route if selects already set */ autoRouteIfPossible(); })
+    .catch(err => console.log('No room_to_node.json found; fallback mapping will be used'));
+
+  // helper: case-insensitive mapping
+  function getMappedNode(roomLabel) {
+    if (!ROOM_TO_NODE || !roomLabel) return null;
+    const normalized = roomLabel.toLowerCase().trim();
+    for (const key in ROOM_TO_NODE) {
+      if (key.toLowerCase().trim() === normalized) return ROOM_TO_NODE[key];
+    }
+    return null;
   }
 
-  // Build nodeMap & adjacency
+  /***** NODES + EDGES from nodes_edges.js (already loaded) *****/
+  // nodes should be array {id,x,y} and edges should be [[id1,id2],...]
+  if (typeof nodes === 'undefined' || typeof edges === 'undefined') {
+    console.error('nodes or edges not found - make sure nodes_edges.js is loaded and defines them');
+  }
+
   const nodeMap = {};
   if (typeof nodes !== 'undefined') nodes.forEach(n => nodeMap[n.id] = n);
 
-  // Lightweight node debug: show small markers and tooltip on hover (not permanent)
-  (function addNodeDebugOverlay(){
-    if (typeof nodes === 'undefined') return;
-    // guard: if massive number of nodes, skip by default (tweak threshold if desired)
-    const MAX_SHOW = 800;
-    if (nodes.length > MAX_SHOW) {
-      console.log('Skipping debug overlay (too many nodes):', nodes.length);
-      return;
-    }
-    const debugLayer = L.layerGroup().addTo(map);
-    nodes.forEach(n => {
-      const m = L.circleMarker([n.y, n.x], {
-        radius: 3,
-        color: '#ff3333',
-        fillColor: '#ff3333',
-        fillOpacity: 0.95,
-        weight: 0.4,
-        interactive: true
-      }).addTo(debugLayer);
-      m.bindTooltip(n.id, { permanent: false, direction: 'right', offset: [6,0], className: 'node-label' });
-      m.on('mouseover', () => m.openTooltip());
-      m.on('mouseout', () => m.closeTooltip());
-    });
-  })();
-
-  // Build adjacency graph (weights = Euclidean)
   const adjacency = {};
   if (typeof nodes !== 'undefined') nodes.forEach(n => adjacency[n.id] = []);
   if (typeof edges !== 'undefined') edges.forEach(([a,b])=>{
-    const na = nodeMap[a], nb = nodeMap[b];
+    // edges may be node indices (numbers) or ids (strings); handle ids
+    const ida = (typeof a === 'number') ? ('node' + a) : a;
+    const idb = (typeof b === 'number') ? ('node' + b) : b;
+    const na = nodeMap[ida], nb = nodeMap[idb];
     if (!na || !nb) return;
     const w = Math.hypot(na.x - nb.x, na.y - nb.y);
-    adjacency[a].push({ to: b, w });
-    adjacency[b].push({ to: a, w });
+    adjacency[ida].push({ to: idb, w });
+    adjacency[idb].push({ to: ida, w });
   });
 
-  // helper: nearest node
   function nearestNodeToPoint(px, py){
     let best = null, bd = Infinity;
     if (typeof nodes === 'undefined') return { node: null, dist: bd };
@@ -252,7 +206,6 @@
     return { node: best, dist: bd };
   }
 
-  // Dijkstra (simple)
   function dijkstra(startId, goalId){
     const dist = {}, prev = {};
     if (typeof nodes === 'undefined') return null;
@@ -277,7 +230,16 @@
     return path.reverse();
   }
 
-  // route drawing state
+  /***** Marker and route drawing *****/
+  const marker = L.marker([svgHeight/2, svgWidth/2], { draggable: true }).addTo(map);
+  marker.bindPopup('You are here').openPopup();
+  function updatePosition(xPixel, yPixel) {
+    const lat = yPixel;
+    const lng = xPixel;
+    marker.setLatLng([lat, lng]);
+  }
+  window.updatePosition = updatePosition;
+
   let routeLayer = null;
   let startPin = null;
   let endPin = null;
@@ -288,68 +250,60 @@
   }
 
   function drawPath(nodePath){
-  // clear previous
-  _clearRouteInternal();
-
-  if (!nodePath || nodePath.length === 0) return;
-
-  // build latlngs (y,x)
-  const latlngs = nodePath.map(id => [ nodeMap[id].y, nodeMap[id].x ]);
-
-  // draw polyline
-  routeLayer = L.polyline(latlngs, { color:'#0077cc', weight:5, opacity:0.95, smoothFactor:1 }).addTo(map);
-
-  // move the draggable user marker to the start (so only one user pin)
-  try {
-    marker.setLatLng(latlngs[0]);
-    // update popup text and open it
-    marker.bindPopup('You are here — start: ' + nodePath[0]).openPopup();
-    // keep marker visible
-    marker.setOpacity(1.0);
-  } catch (e) { console.warn('Could not move marker:', e); }
-
-  // add lightweight start/end pins (smaller icons)
-  const smallIcon = L.divIcon({ className: 'small-pin', html: '', iconSize: [8,8] });
-
-  startPin = L.marker(latlngs[0], { icon: smallIcon, interactive: false }).addTo(map);
-  endPin = L.marker(latlngs[latlngs.length-1], { icon: smallIcon, interactive: false }).addTo(map);
-
-  // optional: show popup for start only (end popup on click)
-  startPin.bindPopup('Start: '+nodePath[0]).openPopup();
-  endPin.bindPopup('End: '+nodePath[nodePath.length-1]);
-
-  try { map.fitBounds(routeLayer.getBounds(), { padding:[20,20] }); } catch(e){ /* ignore */ }
- }
-
-
-  // left panel "Go" (copies and triggers)
-  function goFromLocation(){
-    const cur = document.getElementById('currentLocation').value;
-    const dest = document.getElementById('destination').value;
-    if (!cur || !dest){ alert('Select current and destination in the left panel.'); return; }
-    document.getElementById('startSelect').value = cur;
-    document.getElementById('endSelect').value = dest;
-    tryAutoRouteFromSelects();
+    _clearRouteInternal();
+    if (!nodePath || nodePath.length === 0) return;
+    const latlngs = nodePath.map(id => [ nodeMap[id].y, nodeMap[id].x ]);
+    routeLayer = L.polyline(latlngs, { color:'#0077cc', weight:5 }).addTo(map);
+    startPin = L.marker(latlngs[0]).addTo(map).bindPopup('Start: '+nodePath[0]).openPopup();
+    endPin = L.marker(latlngs[nodePath.length-1]).addTo(map).bindPopup('End: '+nodePath[nodePath.length-1]);
+    map.fitBounds(routeLayer.getBounds(), { padding:[20,20] });
   }
 
-  // findRoute triggered by button when no ROOM_TO_NODE mapping exists.
-  // This initiates click-to-assign mode: user clicks the map for start and end.
+  function latlngToPixel(latlng){ return { x: latlng.lng, y: latlng.lat }; }
+
+  /***** Auto-route wiring (maps labels -> nodes and routes immediately) *****/
+  function routeByNodeIds(startNodeId, endNodeId) {
+    if (!startNodeId || !endNodeId) return;
+    const path = dijkstra(startNodeId, endNodeId);
+    if (!path) { alert('No path found between ' + startNodeId + ' and ' + endNodeId); return; }
+    drawPath(path);
+  }
+
+  function autoRouteIfPossible() {
+    const sLabel = document.getElementById('startSelect').value;
+    const eLabel = document.getElementById('endSelect').value;
+    if (!sLabel || !eLabel) return; // no action until both selected
+
+    // attempt mapping using room_to_node.json (case-insensitive)
+    const sNode = getMappedNode(sLabel);
+    const eNode = getMappedNode(eLabel);
+
+    if (sNode && eNode) {
+      routeByNodeIds(sNode, eNode);
+      return;
+    }
+
+    // fallback: use click-to-assign (existing behavior) if mapping not available
+    findRoute();
+  }
+
+  // attach change handlers
+  document.getElementById('startSelect').addEventListener('change', autoRouteIfPossible);
+  document.getElementById('endSelect').addEventListener('change', autoRouteIfPossible);
+
+  /***** Click-driven mapping used as fallback (original behaviour) *****/
   let assignMode = null; // { startLabel, endLabel, step, startPx, endPx }
   function findRoute(){
     const s = document.getElementById('startSelect').value;
     const e = document.getElementById('endSelect').value;
     if (!s || !e){ alert('Please select both Start and End in the right panel.'); return; }
-    // if mapping available, compute immediately
-    if (ROOM_TO_NODE && ROOM_TO_NODE[s] && ROOM_TO_NODE[e]){
-      const path = dijkstra(ROOM_TO_NODE[s], ROOM_TO_NODE[e]);
-      if (path) { drawPath(path); return; }
-    }
-    // otherwise go into assign mode (two clicks)
+
     assignMode = { startLabel: s, endLabel: e, step: 0 };
-    alert('Click once on the map where "' + s + '" is located. Then click where "' + e + '" is located.');
+    alert('Now click ONCE on the map where "' + s + '" is located. Then click where "' + e + '" is located.');
   }
 
-  // Map click handling
+  function goFromLocation(){ /* left panel removed - not used */ }
+
   map.on('click', function(e){
     const px = e.latlng.lng, py = e.latlng.lat;
 
@@ -357,7 +311,7 @@
       if (assignMode.step === 0){
         assignMode.startPx = { x: px, y: py };
         assignMode.step = 1;
-        alert('Start recorded. Now click the map where "' + assignMode.endLabel + '" is located.');
+        alert('Start mapped. Now click the map where "' + assignMode.endLabel + '" is located.');
         return;
       } else if (assignMode.step === 1){
         assignMode.endPx = { x: px, y: py };
@@ -372,7 +326,7 @@
       }
     }
 
-    // Normal click routing: route from draggable marker to clicked point
+    // Normal click routing (marker -> clicked point)
     const markerPos = marker.getLatLng();
     const startPx = latlngToPixel(markerPos);
     const endPx = { x: px, y: py };
@@ -384,46 +338,11 @@
     drawPath(path);
   });
 
-  // draggable position marker to simulate user position
-  const marker = L.marker([svgHeight/2, svgWidth/2], { draggable: true }).addTo(map);
-  marker.bindPopup('You are here').openPopup();
-
-  // helper: convert latlng to pixel coords
-  function latlngToPixel(latlng){ return { x: latlng.lng, y: latlng.lat }; }
-
-  // Try automatic routing when selects change (uses ROOM_TO_NODE if present)
-  async function tryAutoRouteFromSelects(){
-    const sVal = document.getElementById('startSelect').value;
-    const eVal = document.getElementById('endSelect').value;
-    if (!sVal || !eVal) return;
-
-    // if mapping is available, use it
-    if (ROOM_TO_NODE && ROOM_TO_NODE[sVal] && ROOM_TO_NODE[eVal]){
-      const path = dijkstra(ROOM_TO_NODE[sVal], ROOM_TO_NODE[eVal]);
-      if (path) { drawPath(path); return; }
-    }
-
-    // otherwise, we ask user to click to assign (fallback)
-    // If the mapping is missing, prompt the user to click map for start & end
-    alert('Automatic mapping not found for one or both selections. Please click "Find Route" and then click the map for Start and End points (two clicks).');
-  }
-
-  // wire up UI buttons and select change handlers
-  document.getElementById('btnFind').addEventListener('click', findRoute);
-  document.getElementById('btnClear').addEventListener('click', _clearRouteInternal);
-  document.getElementById('startSelect').addEventListener('change', tryAutoRouteFromSelects);
-  document.getElementById('endSelect').addEventListener('change', tryAutoRouteFromSelects);
-
-  // expose functions globally if other code expects them
   window.findRoute = findRoute;
   window.clearRoute = _clearRouteInternal;
   window.goFromLocation = goFromLocation;
-  window.updatePosition = function(xPixel, yPixel){
-    marker.setLatLng([yPixel, xPixel]);
-  };
 
-  // debug: log summary
-  console.log('Routing initialized. Nodes:', typeof nodes !== 'undefined' ? nodes.length : 0, 'Edges:', typeof edges !== 'undefined' ? edges.length : 0);
+  console.log('Routing ready. Nodes:', typeof nodes !== 'undefined' ? nodes.length : 0, 'Edges:', typeof edges !== 'undefined' ? edges.length : 0);
   </script>
 </body>
 </html>
